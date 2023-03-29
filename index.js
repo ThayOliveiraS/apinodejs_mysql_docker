@@ -1,11 +1,19 @@
 import express from 'express';
 import mysql from 'mysql';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import multer from 'multer';
+const upload = multer();
 
 const PORT = 3000;
 const HOST = '0.0.0.0';
 
 const app = express();
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
+app.use(express.urlencoded({ extended: true }));
+app.use(upload.none());
 
 const db = mysql.createConnection({
   host: 'mysql1',
@@ -21,29 +29,29 @@ db.connect((err) => {
   console.log('Connected!');
 });
 
-app.get('/pessoas/:id', (req, res) => {
+app.get('/clientes/:id', (req, res) => {
   const id = Number(req.params.id);
-  const sql = 'SELECT * FROM pessoas WHERE idpessoas =' + id;
+  const sql = 'SELECT * FROM clientes WHERE idclientes =' + id;
   db.query(sql, (err, result) => {
     if (err) {
       throw err;
     }
     if (result.length === 0) {
-      return res.status(404).send('Pessoa não encontrada');
+      return res.status(404).send('Cliente não encontrado');
     }
     res.json(result);
   })
 });
 
-app.get('/pessoas/email/:email', (req, res) => {
+app.get('/clientes/email/:email', (req, res) => {
   const email = req.params.email;
-  const sql = 'SELECT * FROM pessoas WHERE email =' + `'${email}'`;
+  const sql = 'SELECT * FROM clientes WHERE email =' + `'${email}'`;
   db.query(sql, (err, result) => {
     if (err) {
       throw err;
     }
     if (result.length === 0) {
-      return res.status(404).send('Pessoa não encontrada');
+      return res.status(404).send('Cliente não encontrado');
     }
     res.json(result);
   })
@@ -56,35 +64,21 @@ app.get('/tiposdeclientes', (req, res) => {
       throw err;
     }
     if (result.length === 0) {
-      return res.status(404).send('Pessoa não encontrada');
+      return res.status(404).send('Cliente não encontrado');
     }
     res.json(result);
   })
 });
 
-app.post('/', (req, res) => {
-  const msql = 'INSERT INTO endereco (idtiposdelogradouros, logradouro, bairro, cidade, uf) VALUES (?,?,?,?,?)';
-  const outravariables = [req.body.idtiposdelogradouros, req.body.logradouro, req.body.bairro, req.body.cidade, req.body.uf];
-  let error = false;
-  db.query(msql, outravariables, (err) => {
-    if (err) {
-      error = true
-      return res.status(404).send({ err: err });
-    }
-  });
-  if (error) return;
-
-  const sql = 'INSERT INTO pessoas (nome, telefone, email, idtiposdeclientes, cep, idendereco, numero, complemento) VALUES (?,?,?,?,?,?,?,?)';
-  const variables = [req.body.nome, req.body.telefone, req.body.email, req.body.idtiposdeclientes, req.body.cep, req.body.idendereco, req.body.numero, req.body.complemento];
-  db.query(sql, variables, (err) => {
-    if (err) {
-      error = true
-      return res.status(404).send({ err: err });
-    }
-  });
-  if (error) return;
-
-  res.status(201).send('Produto inserido com Sucesso.');
+app.post('/clientes/gravar', (req, res) => {
+const sql = 'INSERT INTO clientes (nome, telefone, email, idtiposdeclientes, cep, logradouro, numero, complemento, bairro, cidade, uf) VALUES (?,?,?,?,?,?,?,?,?,?,?)';
+const variables = [req.body.nome, req.body.telefone, req.body.email, req.body.idtiposdeclientes, req.body.cep, req.body.logradouro, req.body.numero, req.body.complemento, req.body.bairro, req.body.cidade, req.body.uf];
+db.query(sql, variables, (err) => {
+  if (err) {
+  return res.status(404).send({ err: err });
+}
+});
+res.status(201).send('Cadastro criado com Sucesso.');
 });
 
 app.listen(PORT, () => {
